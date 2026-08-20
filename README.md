@@ -4,6 +4,50 @@ A full-stack healthcare appointment platform with separate portals for **Patient
 
 ---
 
+## Application Screenshots & Visual Walkthrough
+
+Below is a complete visual walkthrough of the platform workflows across patient onboarding, slot reservation, AI pre-visit assessment, Google Calendar event dispatch, and automated leave conflict notifications.
+
+### 1. Authentication & Onboarding
+Seamless role-based authentication with separate flows for user login and patient account registration.
+
+| User Login & Demo Credentials | Patient Registration Portal |
+| :---: | :---: |
+| ![User Login](./docs/images/Screenshot%202026-08-20%20at%203.30.56%E2%80%AFPM.png) | ![Patient Registration](./docs/images/Screenshot%202026-08-20%20at%203.31.04%E2%80%AFPM.png) |
+| *Sign-in portal displaying pre-configured demo logins for Admin, Doctor, and Patient roles.* | *Fast patient self-registration form capturing Name, Email, and Password.* |
+
+---
+
+### 2. Doctor Discovery & Slot Booking Engine
+Patients search clinicians by specialization and pick available consultation windows with built-in concurrency controls.
+
+| Doctor Directory & Specialization Filter | Dynamic Slot Grid & Concurrency State |
+| :---: | :---: |
+| ![Doctor Directory](./docs/images/Screenshot%202026-08-20%20at%203.32.05%E2%80%AFPM.png) | ![Slot Selection](./docs/images/Screenshot%202026-08-20%20at%203.32.15%E2%80%AFPM.png) |
+| *Doctor roster listing working hours, slot durations, and direct booking triggers.* | *Real-time slot availability showing active slots and disabled booked intervals.* |
+
+---
+
+### 3. AI Pre-Visit Symptom Analysis (Google Gemini)
+Patients submit their symptoms during the booking flow. The platform automatically triggers a Gemini LLM evaluation to generate structured clinical insights prior to consultation.
+
+| Symptom Submission Modal | Patient Dashboard & AI Assessment Output |
+| :---: | :---: |
+| ![Symptom Modal](./docs/images/Screenshot%202026-08-20%20at%203.31.52%E2%80%AFPM.png) | ![Pre-Visit Summary](./docs/images/Screenshot%202026-08-20%20at%203.32.08%E2%80%AFPM.png) |
+| *Interactive symptom intake modal with automated AI analysis hook.* | *Live appointment record showing Urgency Level (Medium), Chief Complaint, and Suggested Doctor Questions.* |
+
+---
+
+### 4. Asynchronous Notifications & Calendar Sync
+Background workers deliver booking confirmations, Google Calendar event invites, and automated cancellation notices directly to patient and doctor inboxes.
+
+| Google Calendar Event Invitation | Doctor New Booking & AI Notification | Doctor Leave Auto-Cancellation Alert |
+| :---: | :---: | :---: |
+| ![Calendar Invite](./docs/images/1235EF12-69EC-452F-880B-FB3F591F64D6.png) | ![Doctor Booking Email](./docs/images/9035BED5-3741-4F42-8116-A72D94A3196B.png) | ![Leave Cancellation Email](./docs/images/9595F048-89DC-4462-A193-BD0A0D760CA7.png) |
+| *Automated Google Calendar event created via OAuth 2.0 with start/end time syncing.* | *Asynchronous doctor notification containing patient symptoms and the AI Pre-Visit summary.* | *Automated conflict handling alerting doctor and patient when a leave date cancels booked slots.* |
+
+---
+
 ## Key Features
 
 1. **Role-Based Portals (Patient, Doctor, Admin)**:
@@ -18,10 +62,10 @@ A full-stack healthcare appointment platform with separate portals for **Patient
 3. **AI Integration (Google Gemini)**:
    - **Pre-Visit Prompt**: `"Analyse these symptoms and return: urgency level (Low / Medium / High), chief complaint, and three suggested questions for the doctor. Symptoms: <symptoms>"`
    - **Post-Visit Prompt**: `"Convert these clinical notes into a patient-friendly summary with medication schedule and follow-up steps: <notes>"`
-   - **Graceful Failure Handling**: LLM calls are wrapped in a 5-second timeout with try-catch fallback. If Gemini times out or fails, the raw symptoms/notes are saved and `"Summary pending"` is displayed, ensuring the booking or consultation completion succeeds smoothly!
+   - **Graceful Failure Handling**: LLM calls are wrapped in a 5-second timeout with try-catch fallback[cite: 1]. If Gemini times out or fails, the raw symptoms/notes are saved and `"Summary pending"` is displayed, ensuring the booking or consultation completion succeeds smoothly[cite: 1]!
 
 4. **Asynchronous Notification Queue**:
-   - Handles email notifications (Confirmation, Cancellation, Medication Reminders) and Google Calendar OAuth event creation/deletion asynchronously with exponential backoff retries ($2^{\text{attempts}} \times 1000\text{ms}$).
+   - Handles email notifications (Confirmation, Cancellation, Medication Reminders) and Google Calendar OAuth event creation/deletion asynchronously with exponential backoff retries ($2^{\text{attempts}} \times 1000\text{ms}$)[cite: 1].
 
 ---
 
@@ -48,110 +92,3 @@ npm run prisma:generate
 
 # 5. Populate Mock Data (Seed Script with Faker)
 npm run seed
-```
-
-### 3. Running the Application
-
-```bash
-# Run Development Mode (Backend API + Frontend SPA on http://localhost:5000)
-npm run dev
-```
-
-Visit **`http://localhost:5000`** in your browser.
-
----
-
-## Demo Credentials (Generated by Seed Script)
-
-| Role | Email | Password |
-|---|---|---|
-| **Admin** | `admin@clinic.com` | `admin123` |
-| **Doctor 1** | `doctor1@clinic.com` | `password123` |
-| **Doctor 2** | `doctor2@clinic.com` | `password123` |
-| **Patient 1** | `patient@clinic.com` | `password123` |
-| **Patient 2** | `patient2@example.com` | `password123` |
-
----
-
-## Environment Configuration (`.env.example`)
-
-```env
-PORT=5000
-DATABASE_URL="file:./dev.db" # SQLite default for easy zero-setup testing, or PostgreSQL URL
-JWT_SECRET="super_secret_jwt_key_here_change_in_production"
-
-# LLM Integration (Google Gemini API)
-GEMINI_API_KEY="your-google-gemini-api-key-here"
-LLM_TIMEOUT_MS=5000
-
-# Email Driver (console / smtp)
-EMAIL_DRIVER="console"
-SMTP_HOST="smtp.ethereal.email"
-SMTP_PORT=587
-SMTP_USER="your-email@domain.com"
-SMTP_PASS="your-password"
-
-# Google Calendar OAuth 2.0
-GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="your-client-secret"
-GOOGLE_REDIRECT_URI="http://localhost:5000/api/auth/google/callback"
-```
-
----
-
-## Database Schema Design
-
-```
-User (id, email, passwordHash, name, role)
- └── Doctor (id, userId, specialization, workingHoursStart, workingHoursEnd, slotDuration)
-      ├── Leave (id, doctorId, date, reason)
-      ├── SlotHold (id, doctorId, date, timeSlot, patientId, expiresAt)
-      └── Appointment (id, patientId, doctorId, date, timeSlot, status, symptoms, preVisitSummary, clinicalNotes, postVisitSummary, gcalEventId)
-
-NotificationQueue (id, type, payload, status, attempts, maxAttempts, nextAttemptAt, lastError)
-```
-
----
-
-## API Endpoints Summary
-
-### Auth Routes (`/api/auth`)
-- `POST /api/auth/register` - Patient account registration
-- `POST /api/auth/login` - User authentication & JWT issuance
-- `GET /api/auth/me` - Fetch authenticated user details
-
-### Patient Routes (`/api/patient`)
-- `GET /api/patient/doctors?specialization=...` - List doctors filtered by specialization
-- `GET /api/patient/doctors/:id/slots?date=YYYY-MM-DD` - Get doctor slot availability & active holds
-- `POST /api/patient/hold-slot` - Place 5-minute hold on a slot (`{ doctorId, date, timeSlot }`)
-- `POST /api/patient/book` - Confirm appointment (`{ doctorId, date, timeSlot, symptoms }`)
-- `GET /api/patient/appointments` - Fetch patient appointment history & AI summaries
-
-### Doctor Routes (`/api/doctor`)
-- `GET /api/doctor/schedule` - View doctor's appointment schedule & pre-visit AI summaries
-- `POST /api/doctor/appointments/:id/clinical-notes` - Submit clinical notes & trigger post-visit AI summary
-
-### Admin Routes (`/api/admin`)
-- `POST /api/admin/doctors` - Create new doctor profile
-- `GET /api/admin/doctors` - Roster of all doctors
-- `POST /api/admin/doctors/:id/leave` - Mark doctor on leave & trigger auto-cancellation job for conflicts
-- `GET /api/admin/appointments` - Overview of all clinic appointments
-- `GET /api/admin/queue` - Monitor background notification queue
-
----
-
-## Google Calendar Integration Setup Steps
-
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2. Create a new Project and enable the **Google Calendar API**.
-3. Navigate to **APIs & Services > Credentials** and click **Create Credentials > OAuth client ID**.
-4. Select **Web Application** as the Application type.
-5. Add Authorized redirect URIs: `http://localhost:5000/api/auth/google/callback`.
-6. Copy the **Client ID** and **Client Secret** into your `.env` file (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`).
-7. When appointments are booked, the system automatically creates Calendar events with attendees set to both patient and doctor emails. When an appointment or doctor leave triggers a cancellation, the event is automatically deleted via the asynchronous queue.
-
----
-
-## System Design Write-Up
-
-A comprehensive 800-word design document covering double-booking prevention, leave conflict handling, slot hold TTL mechanics, and exponential backoff notification retries is available in [`SYSTEM_DESIGN.md`](file:///Users/rahulagarwal/Developer/unthinkable/SYSTEM_DESIGN.md).
