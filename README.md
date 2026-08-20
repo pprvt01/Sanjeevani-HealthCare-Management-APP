@@ -39,11 +39,11 @@ Patients submit their symptoms during the booking flow. The platform automatical
 ---
 
 ### 4. Asynchronous Notifications & Calendar Sync
-Background workers deliver booking confirmations, Google Calendar event invites, and automated cancellation notices directly to patient and doctor inboxes.
+Background workers deliver booking confirmations, Google Calendar event invites, and automated cancellation notices directly to patient and doctor inboxes[cite: 1].
 
 | Google Calendar Event Invitation | Doctor New Booking & AI Notification | Doctor Leave Auto-Cancellation Alert |
 | :---: | :---: | :---: |
-| ![Calendar Invite](./docs/images/1235EF12-69EC-452F-880B-FB3F591F64D6.png) | ![Doctor Booking Email](./docs/images/9035BED5-3741-4F42-8116-A72D94A3196B.png) | ![Leave Cancellation Email](./docs/images/9595F048-89DC-4462-A193-BD0A0D760CA7.png) |
+| ![Calendar Invite](./docs/images/WhatsApp%20Image%202026-08-20%20at%2015.39.23.jpeg) | ![Doctor Booking Email](./docs/images/WhatsApp%20Image%202026-08-20%20at%2015.39.12.jpeg) | ![Leave Cancellation Email](./docs/images/WhatsApp%20Image%202026-08-20%20at%2015.42.59.jpeg) |
 | *Automated Google Calendar event created via OAuth 2.0 with start/end time syncing.* | *Asynchronous doctor notification containing patient symptoms and the AI Pre-Visit summary.* | *Automated conflict handling alerting doctor and patient when a leave date cancels booked slots.* |
 
 ---
