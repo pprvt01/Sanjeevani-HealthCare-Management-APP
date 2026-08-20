@@ -1,0 +1,53 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const path_1 = __importDefault(require("path"));
+const config_1 = require("./config");
+const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
+const patient_routes_1 = __importDefault(require("./routes/patient.routes"));
+const doctor_routes_1 = __importDefault(require("./routes/doctor.routes"));
+const admin_routes_1 = __importDefault(require("./routes/admin.routes"));
+const scheduler_1 = require("./utils/scheduler");
+const app = (0, express_1.default)();
+// Security & Middleware
+app.use((0, cors_1.default)());
+app.use(express_1.default.json({ limit: '10mb' }));
+app.use(express_1.default.urlencoded({ extended: true }));
+// Serve frontend static assets from public/ directory
+app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
+// API Routes
+app.use('/api/auth', auth_routes_1.default);
+app.use('/api/patient', patient_routes_1.default);
+app.use('/api/doctor', doctor_routes_1.default);
+app.use('/api/admin', admin_routes_1.default);
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        service: 'Healthcare Appointment & Follow-up Manager',
+        timestamp: new Date().toISOString(),
+    });
+});
+// Serve frontend SPA fallback
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path_1.default.join(__dirname, '../public/index.html'));
+});
+// Start Server
+const PORT = config_1.CONFIG.PORT;
+app.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(` Healthcare Appointment & Follow-up Manager`);
+    console.log(` Server running on: http://localhost:${PORT}`);
+    console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`=======================================================`);
+    // Start background job scheduler for notification retries and slot cleanup
+    scheduler_1.BackgroundScheduler.start(10000);
+});
+exports.default = app;

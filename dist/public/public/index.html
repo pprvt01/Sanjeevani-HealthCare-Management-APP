@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sanjeevani - Healthcare Appointment Manager</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <a href="#" class="brand">
+      <span>Sanjeevani</span>
+    </a>
+
+    <!-- Current Page Title Indicator -->
+    <div id="page-title-indicator" style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.1rem; color: var(--secondary);"></div>
+
+    <div class="nav-right" id="nav-user-area">
+      <!-- Auth state rendered by JS -->
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="container">
+
+    <!-- Auth View (Login / Register) -->
+    <div id="auth-view" class="glass-panel" style="max-width: 480px; margin: 3rem auto;">
+      <h2 style="text-align: center; margin-bottom: 0.5rem;">Welcome to Sanjeevani</h2>
+      <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Sign in to access your portal</p>
+
+      <div class="portal-tabs" style="margin-bottom: 1.5rem;">
+        <button id="auth-tab-login" class="tab-btn active" onclick="switchAuthTab('login')">Login</button>
+        <button id="auth-tab-register" class="tab-btn" onclick="switchAuthTab('register')">Register Patient</button>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="login-email" class="form-control" placeholder="patient@clinic.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
+
+        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 0.8rem; color: var(--text-muted);">
+          <strong>Demo Role Logins:</strong><br>
+          • <em>Patient Page:</em> <code>patient@clinic.com</code> / <code>password123</code><br>
+          • <em>Doctor Page:</em> <code>doctor1@clinic.com</code> / <code>password123</code><br>
+          • <em>Admin Page:</em> <code>admin@clinic.com</code> / <code>admin123</code>
+        </div>
+      </form>
+
+      <form id="register-form" onsubmit="handleRegister(event)" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="reg-name" class="form-control" placeholder="John Doe" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="reg-email" class="form-control" placeholder="john@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="reg-password" class="form-control" placeholder="At least 6 characters" required minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Create Account</button>
+      </form>
+    </div>
+
+    <!-- Main Application View (Strict Page Isolation) -->
+    <div id="app-view" style="display: none;">
+
+      <!-- ================= PATIENT DEDICATED PAGE ================= -->
+      <div id="page-patient" class="role-page" style="display: none;">
+        <!-- 5-Minute Slot Hold Active Banner -->
+        <div id="slot-hold-banner" class="hold-banner" style="display: none;">
+          <div>
+            <h4 style="color: var(--warning); margin-bottom: 0.2rem;">Slot Held for 5 Minutes</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);" id="hold-banner-details">Please fill out your symptoms to finalize booking.</p>
+          </div>
+          <div class="hold-timer" id="hold-timer-display">05:00</div>
+        </div>
+
+        <div class="glass-panel" style="margin-bottom: 2rem;">
+          <div class="section-header">
+            <h2 class="section-title">Find & Book a Doctor</h2>
+            <div style="display: flex; gap: 1rem;">
+              <input type="text" id="patient-search-spec" class="form-control" placeholder="Filter by Specialization (e.g. Cardiology)" style="width: 260px;" oninput="loadDoctors()">
+              <input type="date" id="patient-date-select" class="form-control" style="width: 160px;" onchange="onDateOrDoctorChange()">
+            </div>
+          </div>
+
+          <!-- Doctor Cards Grid -->
+          <div id="doctors-list-grid" class="grid-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Time Slots Grid for Selected Doctor -->
+        <div id="slots-container-panel" class="glass-panel" style="display: none; margin-bottom: 2rem;">
+          <h3 id="selected-doc-title" style="margin-bottom: 0.5rem;">Available Time Slots</h3>
+          <p id="selected-doc-subtitle" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.2rem;"></p>
+          
+          <div id="slot-grid" class="slot-grid">
+            <!-- Slot buttons rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Patient Appointments History -->
+        <div class="glass-panel">
+          <div class="section-header">
+            <h2 class="section-title">My Appointments & AI Summaries</h2>
+            <button class="btn btn-secondary" onclick="loadPatientAppointments()">Refresh</button>
+          </div>
+          <div id="patient-appointments-list">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= DOCTOR DEDICATED PAGE ================= -->
+      <div id="page-doctor" class="role-page" style="display: none;">
+        <div class="glass-panel">
+          <div class="section-header">
+            <h2 class="section-title">Doctor Consultation Schedule & Pre-Visit AI Insights</h2>
+            <button class="btn btn-secondary" onclick="loadDoctorSchedule()">Refresh Schedule</button>
+          </div>
+          <div id="doctor-appointments-list">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= ADMIN DEDICATED PAGE ================= -->
+      <div id="page-admin" class="role-page" style="display: none;">
+        
+        <!-- Integrations Hub Panel -->
+        <div class="glass-panel" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));">
+          <h3 style="margin-bottom: 1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+            Email & Google Calendar API OAuth 2.0 Integration Hub
+          </h3>
+          <div class="grid-2">
+            <div style="background: rgba(18, 26, 44, 0.7); padding: 1.2rem; border-radius: 10px; border: 1px solid var(--border-color);">
+              <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">Email Notification Service</h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
+                <strong>Active Driver:</strong> Nodemailer / SMTP Service (Booking Confirmations, Cancellations & Medication Reminders)
+              </p>
+              <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="testEmailDispatch()">Send Test Email Notification</button>
+            </div>
+            
+            <div style="background: rgba(18, 26, 44, 0.7); padding: 1.2rem; border-radius: 10px; border: 1px solid var(--border-color);">
+              <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">Google Calendar API OAuth 2.0</h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
+                <strong>OAuth 2.0 Status:</strong> Configured (Auto-creates calendar events for patients & doctors upon booking)
+              </p>
+              <button class="btn btn-primary" style="font-size: 0.8rem;" onclick="connectGoogleCalendar()">Authorize Google Calendar OAuth 2.0</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 2rem;">
+
+          <!-- Add New Doctor Form -->
+          <div class="glass-panel">
+            <h3 style="margin-bottom: 1.2rem;">Create Doctor Profile</h3>
+            <form onsubmit="handleCreateDoctor(event)">
+              <div class="form-group">
+                <label class="form-label">Doctor Full Name</label>
+                <input type="text" id="admin-doc-name" class="form-control" placeholder="Sarah Connor (Do not type 'Dr.', system formats automatically)" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="admin-doc-email" class="form-control" placeholder="sarah@clinic.com" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="admin-doc-password" class="form-control" value="doctor123" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Specialization</label>
+                <input type="text" id="admin-doc-spec" class="form-control" placeholder="Neurology, Cardiology..." required>
+              </div>
+              <div style="display: flex; gap: 1rem;">
+                <div class="form-group" style="flex: 1;">
+                  <label class="form-label">Start Hour</label>
+                  <input type="text" id="admin-doc-start" class="form-control" value="09:00" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label class="form-label">End Hour</label>
+                  <input type="text" id="admin-doc-end" class="form-control" value="17:00" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label class="form-label">Slot Duration (Min)</label>
+                  <input type="number" id="admin-doc-slot" class="form-control" value="30" required>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Create Doctor Profile</button>
+            </form>
+          </div>
+
+          <!-- Doctor Roster & Leave Management -->
+          <div class="glass-panel">
+            <h3 style="margin-bottom: 1.2rem;">Manage Doctor Leave & Auto-Cancellation</h3>
+            <div class="form-group">
+              <label class="form-label">Select Doctor</label>
+              <select id="admin-leave-doc-select" class="form-control"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Leave Date</label>
+              <input type="date" id="admin-leave-date" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Reason</label>
+              <input type="text" id="admin-leave-reason" class="form-control" placeholder="Annual Medical Conference">
+            </div>
+            <button class="btn btn-danger" style="width: 100%;" onclick="handleMarkLeave()">Mark Doctor On Leave & Cancel Conflicting Bookings</button>
+          </div>
+        </div>
+
+        <!-- All Clinic Appointments Overview & Queue -->
+        <div class="glass-panel" style="margin-bottom: 2rem;">
+          <div class="section-header">
+            <h2 class="section-title">All Clinic Appointments Feed</h2>
+            <button class="btn btn-secondary" onclick="loadAdminOverview()">Refresh All</button>
+          </div>
+          <div id="admin-all-appointments">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="section-header">
+            <h2 class="section-title">Asynchronous Notification Queue Monitor</h2>
+            <button class="btn btn-secondary" onclick="loadAdminQueue()">Refresh Queue</button>
+          </div>
+          <div id="admin-queue-list">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Booking Symptom Input Modal -->
+  <div id="booking-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Symptom Form & Pre-Visit AI Summary</h3>
+        <button class="close-btn" onclick="closeModal('booking-modal')">&times;</button>
+      </div>
+      <form onsubmit="handleConfirmBooking(event)">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;" id="modal-slot-desc"></p>
+        <div class="form-group">
+          <label class="form-label">Describe Your Symptoms in Detail</label>
+          <textarea id="modal-symptoms-input" class="form-control" rows="4" placeholder="Describe symptoms, duration, intensity (e.g., severe migraine for 2 days, light sensitivity)..." required></textarea>
+        </div>
+        
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid var(--primary-glow); padding: 0.8rem 1rem; border-radius: 8px; font-size: 0.8rem; color: #a5b4fc; margin-bottom: 1.2rem;">
+          Our AI will instantly analyze your symptoms and generate a <strong>Pre-Visit Summary</strong> with urgency assessment for your doctor!
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('booking-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm & Submit Symptoms</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Clinical Notes Doctor Modal -->
+  <div id="notes-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Submit Clinical Notes & Prescription</h3>
+        <button class="close-btn" onclick="closeModal('notes-modal')">&times;</button>
+      </div>
+      <form onsubmit="handleSaveClinicalNotes(event)">
+        <input type="hidden" id="notes-appt-id">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;" id="notes-patient-desc"></p>
+        
+        <div class="form-group">
+          <label class="form-label">Clinical Notes & Prescribed Medications</label>
+          <textarea id="modal-notes-input" class="form-control" rows="5" placeholder="Diagnosis, medication dosage (e.g. Paracetamol 500mg twice daily), follow-up advice..." required></textarea>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.6rem;">
+          <input type="checkbox" id="modal-med-reminder" style="width: 18px; height: 18px; accent-color: var(--primary);">
+          <label for="modal-med-reminder" style="font-size: 0.9rem; cursor: pointer;">Send Automated Medication Reminder Email to Patient</label>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('notes-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Generate AI Patient Summary & Complete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <footer>
+    Sanjeevani - Healthcare Appointment & Follow-up Manager &bull; Powered by Google Gemini AI & Prisma ORM
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
+

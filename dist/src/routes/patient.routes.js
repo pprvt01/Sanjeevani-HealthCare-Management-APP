@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const patient_controller_1 = require("../controllers/patient.controller");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticateJWT);
+router.use((0, auth_1.requireRoles)(['PATIENT', 'ADMIN']));
+router.get('/doctors', patient_controller_1.PatientController.getDoctors);
+router.get('/doctors/:id/slots', patient_controller_1.PatientController.getDoctorSlots);
+router.post('/hold-slot', patient_controller_1.PatientController.holdSlot);
+router.post('/book', patient_controller_1.PatientController.bookAppointment);
+router.get('/appointments', patient_controller_1.PatientController.getAppointments);
+exports.default = router;
